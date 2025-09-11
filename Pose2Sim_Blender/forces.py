@@ -23,6 +23,7 @@
 import bpy
 from mathutils import Vector
 import numpy as np
+import pandas as pd
 import os
 
 direction = 'zup'
@@ -57,7 +58,8 @@ def load_grf(grf_path):
     '''
 
     # read data
-    grf_data_np = np.loadtxt(grf_path, skiprows=7)
+    grf_data_df = pd.read_csv(grf_path, sep='\t', skiprows=6, header=0)
+    grf_data_df.columns = [c.strip() for c in grf_data_df.columns]
     
     # read marker names
     with open(grf_path) as f:
@@ -68,7 +70,7 @@ def load_grf(grf_path):
                 break
     grf_header = [g.strip() for g in grf_header]
     
-    return grf_data_np, grf_header
+    return grf_data_df, grf_header
 
 
 def addForce(force_collection, forceName='', text="FORCE", color=COLOR):        
@@ -122,14 +124,14 @@ def import_forces(grf_path, direction='zup', target_framerate=30):
     '''
     
     # import grf
-    grf_data_np, grf_header = load_grf(grf_path)
+    grf_data_df, grf_header = load_grf(grf_path)
     grfNames = [g[:-3] for g in grf_header if g.endswith('vx')]
 
     # set framerate
     bpy.context.scene.render.fps = target_framerate
     
-    times = grf_data_np[:,0]
-    fps = round((len(times)-1) / (times[-1] - times[0]))
+    times = grf_data_df['time']
+    fps = round((len(times)-1) / (times.iloc[-1] - times.iloc[0]))
     first_frame = round(times[0]*fps)
     conv_fac_frame_rate = round(fps / target_framerate)
     # bpy.data.scenes['Scene'].render.fps = fps
@@ -145,11 +147,13 @@ def import_forces(grf_path, direction='zup', target_framerate=30):
     # H_zup = np.array([[0,0,1,0], [1,0,0,0], [0,1,0,0], [0,0,0,1]])
     H_zup = np.array([[1,0,0,0], [0,0,-1,0], [0,1,0,0], [0,0,0,1]])
     for n in range(0, len(times), conv_fac_frame_rate):
+        x_position_cols = [grf_data_df.columns.get_loc(c) for c in grf_data_df.columns if c.endswith('_px')]
+        x_orientation_cols = [grf_data_df.columns.get_loc(c) for c in grf_data_df.columns if c.endswith('_vx')]
         for i, f in enumerate(grfNames):
-            T = grf_data_np[n, 1+3+9*i : 1+3+9*i+3]
-            grf_vec = grf_data_np[n, 1+9*i : 1+9*i+3]
+            T = grf_data_df.iloc[n, x_position_cols[i]:x_position_cols[i]+3]
+            grf_vec = grf_data_df.iloc[n, x_orientation_cols[i]:x_orientation_cols[i]+3]
             R = (x_unit_arrow.rotation_difference( Vector(grf_vec).normalized() )).to_matrix()
-            H = np.block([ [R,T.reshape(3,1)], [np.zeros(3), 1] ])
+            H = np.block([ [R,T.values.reshape(3,1)], [np.zeros(3), 1] ])
             if direction=='zup':
                 H = H_zup @ H
             scale_arrow = [Vector(grf_vec).magnitude*SIZE, 1, 1]
