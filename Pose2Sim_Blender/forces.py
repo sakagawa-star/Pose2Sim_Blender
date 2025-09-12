@@ -57,7 +57,9 @@ def load_grf(grf_path):
     '''
 
     # read data
-    grf_data_np = np.loadtxt(grf_path, skiprows=7)
+    with open(grf_path, 'r') as f:
+        skipped_rows = next(i for i, line in enumerate(f) if "endheader" in line) + 2
+    grf_data_np = np.loadtxt(grf_path, skiprows=skipped_rows)
     
     # read marker names
     with open(grf_path) as f:
@@ -126,12 +128,16 @@ def import_forces(grf_path, direction='zup', target_framerate=30):
     grfNames = [g[:-3] for g in grf_header if g.endswith('vx')]
 
     # set framerate
-    bpy.context.scene.render.fps = target_framerate
-    
     times = grf_data_np[:,0]
     fps = round((len(times)-1) / (times[-1] - times[0]))
     first_frame = round(times[0]*fps)
-    conv_fac_frame_rate = round(fps / target_framerate)
+    if target_framerate == 'auto':
+        target_framerate = fps
+    target_framerate = round(int(target_framerate))
+    bpy.context.scene.render.fps = target_framerate
+    conv_fac_frame_rate = fps // target_framerate
+    if conv_fac_frame_rate == 0:
+        conv_fac_frame_rate = 1
     # bpy.data.scenes['Scene'].render.fps = fps
         
     # create forces
