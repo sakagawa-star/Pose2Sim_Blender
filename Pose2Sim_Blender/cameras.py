@@ -340,10 +340,8 @@ def retrieveCal_fromScene(cameras):
         # focal distance (px)
         if not has_keyframe(camera, "lens"):
             fov = camera.angle
-            f_1 = w / ( 2 * np.tan(fov/2) )
-            f_2 = h / ( 2 * np.tan(fov/2) )
-            f = np.max([f_1, f_2])
-            
+            max_res = w if w > h else h
+            f = max_res / ( 2 * np.tan(fov/2) )
             K += [[[f, 0.0, cx], [0.0, f, cy], [0.0, 0.0, 1.0]]]
             
         else:
@@ -357,8 +355,10 @@ def retrieveCal_fromScene(cameras):
             K += [K_cam]
         
         # rotation, translation
-        rot_180 = mathutils.Euler(np.radians([180,0,0]), 'ZYX').to_matrix()
-        rot_90 = np.array(mathutils.Euler([0,0,np.radians(90)]).to_matrix())
+        rot_180 = mathutils.Euler(np.radians([180,0,0])).to_matrix()
+        rot_90 = mathutils.Euler(np.radians([0,0,90])).to_matrix()
+        
+        # not moving cameras
         if not has_keyframe(camera_obj, "location") and not has_keyframe(camera_obj, "rotation_euler"):
             # flip x
             r = camera_obj.rotation_euler.to_matrix() @ rot_180
@@ -371,6 +371,7 @@ def retrieveCal_fromScene(cameras):
             
             r_rod = mat_to_rod(r_loc)
         
+        # moving cameras
         else:
             t_loc, r_rod = [], []
             t_idx, r_idx, extr_len = 0, 0, 0
@@ -516,6 +517,9 @@ def setup_cams(calib_params, collection=''):
         render_settings = bpy.context.scene.render
         render_settings.resolution_x = w
         render_settings.resolution_y = h
+    
+    # Make last camera the active object
+    bpy.context.view_layer.objects.active = camera_obj
         
 
 def import_cameras(toml_path):
@@ -653,9 +657,11 @@ def show_images(camera, img_vid_path, single_image=False):
     # # apply shift
     # image.empty_image_offset[0] = -.5 + img.location[0]
     # image.empty_image_offset[1] = -.5 + img.location[1]
-
     
     bpy.ops.object.transform_apply(location=False, scale=True)
+    
+    # Make camera the active object instead of the image
+    bpy.context.view_layer.objects.active = camera
     
     print(f'Image or video imported from {img_vid_path}')
 
