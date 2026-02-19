@@ -52,7 +52,7 @@ def createMaterial(color=(0.8, 0.8, 0.8, 1), metallic = 0.5, roughness = 0.5):
         matg.use_nodes = True
         tree = matg.node_tree
         nodes = tree.nodes
-        bsdf = nodes["Principled BSDF"]
+        bsdf = next(n for n in nodes if n.type == 'BSDF_PRINCIPLED')
         bsdf.inputs["Base Color"].default_value = color
         matg.diffuse_color = color
         matg.metallic = metallic

@@ -91,7 +91,7 @@ def addForce(force_collection, forceName='', text="FORCE", color=COLOR):
     matg.use_nodes = True
     tree = matg.node_tree
     nodes = tree.nodes
-    bsdf = nodes["Principled BSDF"]
+    bsdf = next(n for n in nodes if n.type == 'BSDF_PRINCIPLED')
     bsdf.inputs["Base Color"].default_value = color
     matg.diffuse_color = color
 

@@ -204,7 +204,7 @@ def add_bezier(v0 , v1, color=COLOR, ray_width=RAY_WIDTH):
     matg.use_nodes = True
     tree = matg.node_tree
     nodes = tree.nodes
-    bsdf = nodes["Principled BSDF"]
+    bsdf = next(n for n in nodes if n.type == 'BSDF_PRINCIPLED')
     bsdf.inputs["Base Color"].default_value = color
     matg.diffuse_color = color
     
