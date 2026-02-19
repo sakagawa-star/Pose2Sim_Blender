@@ -345,14 +345,11 @@ def import_trc(trc_path, direction='zup', target_framerate='auto', armature_type
         for i, m in enumerate(markerNames):
             m = [coll_m.strip() for coll_m in coll_marker_names if m.strip() == re.sub(r'\.\d+$', '', coll_m.strip())][0]
             for n in range(0, len(times), conv_fac_frame_rate):
-                # y-up to z-up
+                # OpenSim/ISB → Blender: (X,Y,Z) → (Z,X,Y)
                 if direction=='zup':
-                    # loc_x = trc_data_np[n,3*i+4]
-                    # loc_y = trc_data_np[n,3*i+2]
-                    # loc_z = trc_data_np[n,3*i+3]
-                    loc_x = trc_data_np[n,3*i+2]
-                    loc_y = -trc_data_np[n,3*i+4]
-                    loc_z = trc_data_np[n,3*i+3]
+                    loc_x = trc_data_np[n,3*i+4]   # OpenSim_Z → Blender_X
+                    loc_y = trc_data_np[n,3*i+2]   # OpenSim_X → Blender_Y
+                    loc_z = trc_data_np[n,3*i+3]   # OpenSim_Y → Blender_Z
                 else:
                     loc_x = trc_data_np[n,3*i+2]
                     loc_y = trc_data_np[n,3*i+4]
@@ -374,9 +371,10 @@ def import_trc(trc_path, direction='zup', target_framerate='auto', armature_type
         bpy.ops.preferences.addon_enable(module='io_anim_c3d')
         from io_anim_c3d import c3d_importer
         operator = bpy.types.Operator
-        c3d_importer.load(operator, bpy.context, \
-                          filepath = trc_path, \
-                          use_manual_orientation=True, axis_forward='Y', axis_up='Z')
+        # C3Dメタデータによる自動座標変換に任せる
+        c3d_importer.load(operator, bpy.context,
+                          filepath = trc_path,
+                          use_manual_orientation=False)
                           
         # Shift animation one frame back
         for obj in reversed(bpy.context.scene.objects): # last created armature

@@ -126,8 +126,8 @@ def apply_mot_to_model(mot_path, osim_path, direction='zup', target_framerate='a
         # animate model
         state = model.initSystem()
         loc_rot_frame_all = []
-        # H_zup = np.array([[0,0,1,0], [1,0,0,0], [0,1,0,0], [0,0,0,1]])
-        H_zup = np.array([[1,0,0,0], [0,0,-1,0], [0,1,0,0], [0,0,0,1]])
+        # OpenSim/ISB → Blender 変換行列: (X,Y,Z) → (Z,X,Y)
+        H_zup = np.array([[0,0,1,0], [1,0,0,0], [0,1,0,0], [0,0,0,1]])
         
         # print('Time frame:')
         for n in range(0, len(times), conv_fac_frame_rate):
