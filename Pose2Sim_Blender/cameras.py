@@ -321,29 +321,30 @@ def retrieveCal_fromScene(cameras):
     h = render_settings.resolution_y
     S = [[w, h]] * len(cameras)
     
-    # distortions are neglected at the moment
-    distortions = [0.0, 0.0, 0.0, 0.0]
-    D = [distortions] * len(cameras)
-    
-    N, K, R, T, P = [], [], [], [], []
+    N, D, K, R, T, P = [], [], [], [], [], []
     for camera_obj in cameras:
         # camera name
         name = camera_obj.name
-        camera = bpy.data.cameras[camera_obj.name]
+        camera = camera_obj.data
         N += [name]
-        
+
+        # distortions
+        D += [list(camera.get("calib_distortions", [0.0, 0.0, 0.0, 0.0]))]
+
         # principal point
         max_wh = np.max([w,h])
         cx = max_wh * camera.shift_x + w/2
         cy = max_wh * camera.shift_y + h/2
-        
+
         # focal distance (px)
+        calib_fy = camera.get("calib_fy", None)
         if not has_keyframe(camera, "lens"):
             fov = camera.angle
             max_res = w if w > h else h
             f = max_res / ( 2 * np.tan(fov/2) )
-            K += [[[f, 0.0, cx], [0.0, f, cy], [0.0, 0.0, 1.0]]]
-            
+            fy = calib_fy if calib_fy is not None else f
+            K += [[[f, 0.0, cx], [0.0, fy, cy], [0.0, 0.0, 1.0]]]
+
         else:
             K_cam = []
             for fc in camera.animation_data.action.fcurves:
@@ -351,23 +352,20 @@ def retrieveCal_fromScene(cameras):
                     for key in fc.keyframe_points:                      # each frame
                         lens = key.co[1]
                         f = lens * w / camera.sensor_width
-                        K_cam.append( [[f, 0.0, cx], [0.0, f, cy], [0.0, 0.0, 1.0]] )
+                        fy = calib_fy if calib_fy is not None else f
+                        K_cam.append( [[f, 0.0, cx], [0.0, fy, cy], [0.0, 0.0, 1.0]] )
             K += [K_cam]
         
         # rotation, translation
         rot_180 = mathutils.Euler(np.radians([180,0,0])).to_matrix()
-        rot_90 = mathutils.Euler(np.radians([0,0,90])).to_matrix()
-        
+
         # not moving cameras
         if not has_keyframe(camera_obj, "location") and not has_keyframe(camera_obj, "rotation_euler"):
             # flip x
             r = camera_obj.rotation_euler.to_matrix() @ rot_180
             t = camera_obj.location
-            # rotate 90
-            t_new = rot_90 @ t
-            r_new = rot_90 @ r
-            
-            r_loc, t_loc = world_to_camera_persp(np.array(r_new), t_new)
+
+            r_loc, t_loc = world_to_camera_persp(np.array(r), t)
             
             r_rod = mat_to_rod(r_loc)
         
@@ -396,11 +394,7 @@ def retrieveCal_fromScene(cameras):
                 # flip x
                 r = mathutils.Euler(rotation[i]).to_matrix() @ rot_180
                 t = translation[i]
-                # rotate 90
-                t_new = rot_90 @ t
-                r_new = rot_90 @ r
-                
-                r_loc_i, t_loc_i = world_to_camera_persp(np.array(r_new), t_new)
+                r_loc_i, t_loc_i = world_to_camera_persp(np.array(r), t)
                 
                 t_loc.append(list(t_loc_i))
                 r_rod.append(list(mat_to_rod(r_loc_i)))
@@ -466,42 +460,42 @@ def setup_cams(calib_params, collection=''):
                 fx, fy = K[c][n][0,0], K[c][n][1,1]
                 fov_x = 2 * np.arctan2(w, 2 * fx)
                 fov_y = 2 * np.arctan2(h, 2 * fy)
-                
+
                 camera.type = 'PERSP'
                 camera.lens_unit = 'FOV'
                 camera.angle = np.max([fov_x, fov_y])
-            
+
                 camera.keyframe_insert('lens', frame=n+1)
-        else: 
+        else:
             fx, fy = K[c][0,0], K[c][1,1]
             fov_x = 2 * np.arctan2(w, 2 * fx)
             fov_y = 2 * np.arctan2(h, 2 * fy)
-            
+
             camera.type = 'PERSP'
             camera.lens_unit = 'FOV'
             camera.angle = np.max([fov_x, fov_y])
+
+        # store original calibration data as custom properties
+        camera["calib_fy"] = float(fy)
+        camera["calib_distortions"] = [float(d) for d in D[c]]
             
         # rotation and translation
         if moving[c] and 'extr' in moving[c]:
             for n in range(0,len(R[c])):
                 r, t = world_to_camera_persp(R[c][n], T[c][n])
-                t = np.array([t[1], -t[0], t[2]])
-                homog_matrix = np.block([[r,t.reshape(3,1)], 
+                homog_matrix = np.block([[r,t.reshape(3,1)],
                                         [np.zeros(3), 1 ]])
                 camera_obj.matrix_world = mathutils.Matrix(homog_matrix)
                 set_loc_rotation(camera_obj, np.radians([180,0,0]))
-                camera_obj.rotation_euler += np.radians([0, 0, -90])
                 
                 camera_obj.keyframe_insert('location', frame=n+1)
                 camera_obj.keyframe_insert('rotation_euler', frame=n+1)
         else:
             r, t = world_to_camera_persp(R[c], T[c])
-            t = np.array([t[1], -t[0], t[2]])
-            homog_matrix = np.block([[r,t.reshape(3,1)], 
+            homog_matrix = np.block([[r,t.reshape(3,1)],
                                     [np.zeros(3), 1 ]])
             camera_obj.matrix_world = mathutils.Matrix(homog_matrix)
             set_loc_rotation(camera_obj, np.radians([180,0,0]))
-            camera_obj.rotation_euler += np.radians([0, 0, -90])
         
         # principal point # see https://blender.stackexchange.com/a/58236/174689
         if moving[c] and 'intr' in moving[c]:

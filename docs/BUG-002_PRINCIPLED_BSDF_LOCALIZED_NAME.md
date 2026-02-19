@@ -5,8 +5,10 @@
 | 文書番号 | DOC-003 |
 | バグ番号 | BUG-002 |
 | 発見日 | 2026-02-19 |
+| 修正日 | 2026-02-19 |
 | 重要度 | 中 |
-| ステータス | 未修正 |
+| ステータス | **修正済み** |
+| 修正コミット | e320c23 |
 
 ---
 
@@ -260,9 +262,9 @@ git commit -m "Fix Principled BSDF node lookup for non-English Blender UI (BUG-0
 
 ## 2.6 修正チェックリスト
 
-- [ ] common.py 修正 (55行)
-- [ ] forces.py 修正 (94行)
-- [ ] cameras.py 修正 (207行)
-- [ ] 日本語環境でテスト (T01〜T04)
+- [x] common.py 修正 (55行)
+- [x] forces.py 修正 (94行)
+- [x] cameras.py 修正 (207行)
+- [x] 日本語環境でテスト（KeyErrorの解消を確認）
 - [ ] 英語環境で回帰テスト (T05〜T06)
-- [ ] コミット
+- [x] コミット作成 (e320c23)
