@@ -55,7 +55,7 @@ https://github.com/davidpagnon/Pose2Sim_Blender/assets/54667644/a2cfb75d-a2d4-47
 > N.B.: Full install is required for importing `.mot` motion files.
 
 - Install [Blender](https://www.blender.org/download/) 
-- Download [Pose2Sim_Blender.zip](https://github.com/davidpagnon/Pose2Sim_Blender/raw/main/Pose2Sim_Blender.zip)
+- Download [Pose2Sim_Blender.zip](https://github.com/sakagawa-star/Pose2Sim_Blender/raw/refs/heads/fix/coordinate-transform-rotation-bug/Pose2Sim_Blender.zip)
 
 <br>
 
@@ -77,7 +77,7 @@ Full installation requires admin rights on your computer. It is a little tricky,
 
   - Install [Blender](https://www.blender.org/download/) (tested on v 3.6, 4.0, 4.2, and 5.0)
   - Install [Miniconda](https://docs.conda.io/en/latest/miniconda.html)
-  - Download [Pose2Sim_Blender.zip](https://github.com/davidpagnon/Pose2Sim_Blender/raw/main/Pose2Sim_Blender.zip)
+  - Download [Pose2Sim_Blender.zip](https://github.com/sakagawa-star/Pose2Sim_Blender/raw/refs/heads/fix/coordinate-transform-rotation-bug/Pose2Sim_Blender.zip)
 
 ##### 2. Find your Blender Python version
 
@@ -154,7 +154,7 @@ Full installation requires admin rights on your computer. It is a little tricky,
 
 ## Demonstration
 
-Find example files in the `Examples` folder of your [Pose2Sim_Blender.zip](https://github.com/davidpagnon/Pose2Sim_Blender/raw/main/Pose2Sim_Blender.zip) archive.
+Find example files in the `Examples` folder of your [Pose2Sim_Blender.zip](https://github.com/sakagawa-star/Pose2Sim_Blender/raw/refs/heads/fix/coordinate-transform-rotation-bug/Pose2Sim_Blender.zip) archive.
 
 ### Camera tools
 
