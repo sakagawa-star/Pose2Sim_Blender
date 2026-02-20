@@ -3,3 +3,5 @@
 *.egg-info/
 dist/
 logs.txt
+docs/
+CLAUDE.md
